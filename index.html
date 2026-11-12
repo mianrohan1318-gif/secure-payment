@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Payment</title>
+  <!-- QR Code Generator Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #f4f5f7;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      background-color: #f4f5f7;
+      padding-bottom: 24px;
+    }
+
+    /* Top Dark Header */
+    .header {
+      background-color: #111111;
+      color: #ffffff;
+      padding: 20px 20px 24px;
+    }
+
+    .amount-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .discount-text {
+      color: #f59e0b;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Card Styling */
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      margin: 14px 16px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      color: #333333;
+      margin-bottom: 16px;
+    }
+
+    .highlight-red {
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+    .timer {
+      color: #f59e0b;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    /* QR Code Section */
+    .qr-wrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0 20px;
+    }
+
+    #qrcode {
+      padding: 8px;
+      background: #ffffff;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: absolute;
+      bottom: 24px;
+      background: rgba(55, 65, 81, 0.92);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 24px;
+      font-size: 13px;
+      text-align: center;
+      max-width: 85%;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    /* App Payment Buttons */
+    .pay-btn {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .pay-btn:last-child {
+      margin-bottom: 0;
+    }
+
+    .pay-btn:active {
+      background: #f9fafb;
+    }
+
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .paytm-logo {
+      color: #002970;
+      letter-spacing: -0.5px;
+    }
+
+    .paytm-logo span {
+      color: #00baf2;
+    }
+
+    .phonepe-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: #5f259f;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .phonepe-text {
+      color: #1f2937;
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .tap-icon {
+      color: #3b82f6;
+      font-size: 20px;
+    }
+
+    /* Manual Copy Section */
+    .step-label {
+      font-size: 14px;
+      color: #374151;
+      margin-bottom: 12px;
+    }
+
+    .step-amount {
+      color: #f59e0b;
+      font-weight: 700;
+    }
+
+    .copy-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .upi-box {
+      flex: 1;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: #111827;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .copy-btn {
+      background: #1d6ff2;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 0 20px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .copy-btn:active {
+      background: #1558c7;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Top Header -->
+    <div class="header">
+      <div class="amount-title">Amount Payable: ₹<span id="header-amount">1509.99</span></div>
+      <div class="discount-text">Get ₹0.01 off</div>
+    </div>
+
+    <!-- QR & App Payment Card -->
+    <div class="card">
+      <div class="card-header">
+        <div>Scan the <span class="highlight-red">one-time</span> QR code to pay:</div>
+        <div class="timer" id="timer">04:38</div>
+      </div>
+
+      <div class="qr-wrapper">
+        <div id="qrcode"></div>
+        <div class="toast" id="toast">No APP found, please try another payment method</div>
+      </div>
+
+      <button class="pay-btn" onclick="openUpiApp('paytmmp://pay')">
+        <div class="app-brand paytm-logo">pay<span>tm</span></div>
+        <div class="tap-icon">👆</div>
+      </button>
+
+      <button class="pay-btn" onclick="openUpiApp('phonepe://pay')">
+        <div class="app-brand">
+          <span class="phonepe-badge">पे</span>
+          <span class="phonepe-text">PhonePe</span>
+        </div>
+        <div class="tap-icon">👆</div>
+      </button>
+    </div>
+
+    <!-- Manual Copy Card -->
+    <div class="card">
+      <div class="step-label">
+        1. Copy the UPI below and transfer <span class="step-amount">₹<span id="step-amount">1509.99</span></span>
+      </div>
+      <div class="copy-row">
+        <div class="upi-box" id="upi-display">merchant@upi</div>
+        <button class="copy-btn" id="copy-btn" onclick="copyUpi()">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. Read URL Parameters (with fallback defaults)
+    const params = new URLSearchParams(window.location.search);
+    const amount = params.get("amount") || "1509.99";
+    const upiId = params.get("upi") || "merchant@upi";
+    const note = params.get("RepaymentLink") || "Payment";
+
+    // 2. Populate UI Elements
+    document.getElementById("header-amount").textContent = amount;
+    document.getElementById("step-amount").textContent = amount;
+    document.getElementById("upi-display").textContent = upiId;
+
+    // 3. Generate Standard UPI QR Code
+    const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(note)}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(note)}`;
+    new QRCode(document.getElementById("qrcode"), {
+      text: upiUri,
+      width: 210,
+      height: 210,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    // 4. Countdown Timer (4 mins 38 secs = 278 seconds)
+    let secondsLeft = 278;
+    const timerEl = document.getElementById("timer");
+    const countdown = setInterval(() => {
+      if (secondsLeft <= 0) {
+        clearInterval(countdown);
+        timerEl.textContent = "00:00";
+        return;
+      }
+      secondsLeft--;
+      const mins = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
+      const secs = String(secondsLeft % 60).padStart(2, "0");
+      timerEl.textContent = `${mins}:${secs}`;
+    }, 1000);
+
+    // 5. Trigger App Deep Link + Fallback Toast
+    function openUpiApp(schemePrefix) {
+      const appUri = `${schemePrefix}?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(note)}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(note)}`;
+      window.location.href = appUri;
+
+      // Show fallback toast if the browser stays focused (e.g., on desktop or if app isn't installed)
+      setTimeout(() => {
+        showToast("No APP found, please try another payment method");
+      }, 1200);
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 3000);
+    }
+
+    // 6. Copy UPI ID to Clipboard
+    function copyUpi() {
+      navigator.clipboard.writeText(upiId).then(() => {
+        const btn = document.getElementById("copy-btn");
+        btn.textContent = "Copied";
+        setTimeout(() => (btn.textContent = "Copy"), 2000);
+      });
+    }
+  </script>
+</body>
+</html>
